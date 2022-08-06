@@ -1,5 +1,8 @@
 import Layout from "../components/layout/Layout";
+import Head from 'next/head';
 import MeetupList from "../components/meetups/MeetupList";
+import { MongoClient } from "mongodb";
+import { Fragment } from "react";
 
 const DUMMY_MEET_UPS = [
   {
@@ -19,11 +22,56 @@ const DUMMY_MEET_UPS = [
     description: "this is meetup",
   },
 ];
-function HomePage() {
+function HomePage(props) {
   return (
-    <Layout>
-      <MeetupList meetups={DUMMY_MEET_UPS}></MeetupList>
-    </Layout>
-  );
+    <Fragment>
+        <Head>
+            <title>
+                React meetup
+            </title>
+            <meta
+            name='description'
+            content="Just Practicing">
+            </meta>
+        </Head>
+    <MeetupList meetups={props.meetups}></MeetupList>;
+
+    </Fragment>
+
+  )
 }
+
+export async function getStaticProps() {
+  const client = await MongoClient.connect(
+    "mongodb+srv://Mangu123:Mangu123@cluster0.68wz6.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+  const meetsupCollection = db.collection("meetups");
+  const meetUps = await meetsupCollection.find().toArray();
+  client.close();
+  return {
+    props: {
+      meetups: meetUps.map((meetup) => ({
+        id: meetup._id.toString(),
+        image: meetup.image,
+        title: meetup.title,
+        address: meetup.address,
+        description: meetup.description,
+      })),
+    },
+    revalidate: 1,
+  };
+}
+
+
+// export async function getServerSideProps(context){
+//     const req = context.req;
+//     const res = context.res;
+//     return {
+//         props: {
+//           meetups: DUMMY_MEET_UPS,
+//         }
+//       };
+
+// }
 export default HomePage;
